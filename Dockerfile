@@ -10,6 +10,10 @@ LABEL org.opencontainers.image.title="EcoFlow Keep-Alive" \
 # Set working directory
 WORKDIR /app
 
+# Install the exact matching Playwright Python package (the base image provides browsers and OS deps only)
+RUN pip install --no-cache-dir playwright==1.61.0 \
+    && python3 -c "from playwright.sync_api import sync_playwright"
+
 # Copy the script
 COPY ecoflow_keepalive.py .
 
