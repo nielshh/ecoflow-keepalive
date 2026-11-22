@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>EcoFlow Keep-Alive | Home Assistant MQTT Keep-Alive Container</title>
+  <meta name="description" content="Lightweight headless Chromium Docker container that keeps EcoFlow cloud MQTT telemetry flowing for Home Assistant.">
+  <style>
+    :root {
+      --bg-light: #f8fafc;
+      --bg-dark: #0b1120;
+      --surface-light: #ffffff;
+      --surface-dark: #111a2e;
+      --surface-alt-light: #f1f5f9;
+      --surface-alt-dark: #17233c;
+      --code-bg-light: #0f172a;
+      --code-bg-dark: #070c18;
+      --code-text-light: #f1f5f9;
+      --code-text-dark: #e2e8f0;
+      --text-light: #0f172a;
+      --text-dark: #f1f5f9;
+      --muted-light: #475569;
+      --muted-dark: #94a3b8;
+      --border-light: #cbd5e1;
+      --border-dark: #263554;
+      --brand-light: #0369a1;
+      --brand-dark: #38bdf8;
+      --brand-contrast-light: #ffffff;
+      --brand-contrast-dark: #061826;
+      --success-light: #15803d;
+      --success-dark: #4ade80;
+      --danger-light: #b91c1c;
+      --danger-dark: #f87171;
+      --focus-light: #0284c7;
+      --focus-dark: #7dd3fc;
+
+      --bg: var(--bg-light);
+      --surface: var(--surface-light);
+      --surface-alt: var(--surface-alt-light);
+      --code-bg: var(--code-bg-light);
+      --code-text: var(--code-text-light);
+      --text: var(--text-light);
+      --muted: var(--muted-light);
+      --border: var(--border-light);
+      --brand: var(--brand-light);
+      --brand-contrast: var(--brand-contrast-light);
+      --success: var(--success-light);
+      --danger: var(--danger-light);
+      --focus-ring: var(--focus-light);
+
+      @media (prefers-color-scheme: dark) {
+        --bg: var(--bg-dark);
+        --surface: var(--surface-dark);
+        --surface-alt: var(--surface-alt-dark);
+        --code-bg: var(--code-bg-dark);
+        --code-text: var(--code-text-dark);
+        --text: var(--text-dark);
+        --muted: var(--muted-dark);
+        --border: var(--border-dark);
+        --brand: var(--brand-dark);
+        --brand-contrast: var(--brand-contrast-dark);
+        --success: var(--success-dark);
+        --danger: var(--danger-dark);
+        --focus-ring: var(--focus-dark);
+      }
+
+      @supports (color: light-dark(white, black)) {
+        --bg: light-dark(var(--bg-light), var(--bg-dark));
+        --surface: light-dark(var(--surface-light), var(--surface-dark));
+        --surface-alt: light-dark(var(--surface-alt-light), var(--surface-alt-dark));
+        --code-bg: light-dark(var(--code-bg-light), var(--code-bg-dark));
+        --code-text: light-dark(var(--code-text-light), var(--code-text-dark));
+        --text: light-dark(var(--text-light), var(--text-dark));
+        --muted: light-dark(var(--muted-light), var(--muted-dark));
+        --border: light-dark(var(--border-light), var(--border-dark));
+        --brand: light-dark(var(--brand-light), var(--brand-dark));
+        --brand-contrast: light-dark(var(--brand-contrast-light), var(--brand-contrast-dark));
+        --success: light-dark(var(--success-light), var(--success-dark));
+        --danger: light-dark(var(--danger-light), var(--danger-dark));
+        --focus-ring: light-dark(var(--focus-light), var(--focus-dark));
+      }
+
+      color-scheme: light dark;
+      accent-color: var(--brand);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    :where(a:any-link, button, summary, [tabindex]):focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 3px;
+    }
+
+    .visually-hidden:where(:not(:focus-within, :active)) {
+      position: absolute !important;
+      clip-path: inset(50%) !important;
+      overflow: hidden !important;
+      width: 1px !important;
+      height: 1px !important;
+      margin: -1px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      white-space: nowrap !important;
+    }
+
+    .skip-link:focus {
+      position: fixed;
+      inset-block-start: 0.75rem;
+      inset-inline-start: 0.75rem;
+      z-index: 100;
+      padding: 0.65rem 1rem;
+      border-radius: 0.5rem;
+      background: var(--brand);
+      color: var(--brand-contrast);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .container {
+      max-inline-size: 62rem;
+      margin-inline: auto;
+      padding-inline: 1.25rem;
+    }
+
+    .site-header {
+      border-block-end: 1px solid var(--border);
+      background-color: var(--surface);
+    }
+
+    .header-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-block: 1rem;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .brand svg {
+      inline-size: 1.5rem;
+      block-size: 1.5rem;
+      color: var(--brand);
+    }
+
+    .nav-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-list a {
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .nav-list a:hover {
+      color: var(--brand);
+      text-decoration: underline;
+    }
+
+    main {
+      padding-block: 2.5rem 4rem;
+    }
+
+    .hero {
+      padding-block: 1.5rem 2.5rem;
+      border-block-end: 1px solid var(--border);
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin-block-end: 0.75rem;
+      padding: 0.25rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background-color: var(--surface-alt);
+      color: var(--brand);
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    h1 {
+      margin: 0 0 1rem;
+      font-size: clamp(1.9rem, 4vw, 2.75rem);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+
+    .lead {
+      max-inline-size: 46rem;
+      margin: 0 0 1.5rem;
+      font-size: 1.125rem;
+      color: var(--muted);
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-block-size: 2.75rem;
+      padding: 0.65rem 1.15rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      font-weight: 600;
+      text-decoration: none;
+      background-color: var(--surface);
+      color: var(--text);
+    }
+
+    .btn-primary {
+      background-color: var(--brand);
+      color: var(--brand-contrast);
+      border-color: var(--brand);
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    section {
+      padding-block: 2.25rem;
+      border-block-end: 1px solid var(--border);
+    }
+
+    section:last-of-type {
+      border-block-end: none;
+    }
+
+    h2 {
+      margin: 0 0 1rem;
+      font-size: 1.5rem;
+      line-height: 1.25;
+    }
+
+    h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+      gap: 1rem;
+    }
+
+    .card {
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      background-color: var(--surface);
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .code-figure {
+      margin: 1.25rem 0;
+    }
+
+    .code-figure figcaption {
+      margin-block-end: 0.45rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .copyable {
+      display: flex;
+      align-items: start;
+      gap: 0.5rem;
+    }
+
+    .copyable .copy {
+      flex: none;
+      order: 1;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .copyable pre {
+      flex: 1 1 auto;
+      min-inline-size: 0;
+      margin: 0;
+      padding: 1rem 1.15rem;
+      overflow: auto;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      background-color: var(--code-bg);
+      color: var(--code-text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .copy-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-inline-size: 2.25rem;
+      min-block-size: 2.25rem;
+      padding: 0.35rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      background-color: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .copy-button .icon {
+      inline-size: 1.1rem;
+      block-size: 1.1rem;
+    }
+
+    .copy-button .icon-check {
+      display: none;
+    }
+
+    .copy-button[data-copied] {
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .copy-button[data-copied] .icon-copy {
+      display: none;
+    }
+
+    .copy-button[data-copied] .icon-check {
+      display: block;
+    }
+
+    .copy-button[data-failed] {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .tip {
+      position: absolute;
+      inset-block-end: calc(100% + 0.4rem);
+      inset-inline-end: 0;
+      padding: 0.25rem 0.55rem;
+      border-radius: 0.4rem;
+      background-color: var(--text);
+      color: var(--bg);
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .copy-button[data-copied] + .tip,
+    .copy-button[data-failed] + .tip {
+      opacity: 1;
+    }
+
+    @media (hover: hover) {
+      .copyable {
+        display: block;
+        position: relative;
+      }
+
+      .copyable pre {
+        padding-inline-end: 3.75rem;
+      }
+
+      .copyable .copy {
+        position: absolute;
+        inset-block-start: 0.6rem;
+        inset-inline-end: 0.6rem;
+      }
+
+      .copyable .copy-button {
+        opacity: 0;
+        transition: opacity 0.15s ease;
+        background-color: var(--surface);
+      }
+
+      .copyable:hover .copy-button,
+      .copyable:focus-within .copy-button,
+      .copyable .copy-button:focus-visible,
+      .copyable .copy-button[data-copied],
+      .copyable .copy-button[data-failed] {
+        opacity: 1;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .copyable .copy-button,
+      .tip {
+        transition-duration: 0.01ms;
+      }
+    }
+
+    .table-wrapper {
+      overflow: auto;
+      max-inline-size: 100%;
+      max-block-size: 34rem;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      background-color: var(--surface);
+      container-type: inline-size;
+    }
+
+    table {
+      inline-size: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      text-align: start;
+      font-size: 0.94rem;
+      --label-2: "Required";
+      --label-3: "Default";
+      --label-4: "Description";
+    }
+
+    caption {
+      padding: 0.85rem 1rem;
+      text-align: start;
+      font-weight: 600;
+      color: var(--muted);
+      border-block-end: 1px solid var(--border);
+    }
+
+    thead {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 2;
+      background-color: var(--surface-alt);
+    }
+
+    th,
+    td {
+      padding: 0.75rem 1rem;
+      border-block-end: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child th,
+    tbody tr:last-child td {
+      border-block-end: none;
+    }
+
+    tbody th {
+      position: sticky;
+      inset-inline-start: 0;
+      z-index: 1;
+      background-color: var(--surface);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    @container (width < 640px) {
+      table,
+      thead,
+      tbody,
+      tr,
+      th,
+      td {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tbody tr {
+        margin: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        overflow: hidden;
+      }
+
+      tbody th {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: 2;
+        background-color: var(--surface-alt);
+        border-block-end: 1px solid var(--border);
+      }
+
+      td {
+        border-block-end: 1px solid var(--border);
+      }
+
+      td:nth-child(2)::before {
+        content: var(--label-2) ": ";
+        font-weight: 600;
+      }
+
+      td:nth-child(3)::before {
+        content: var(--label-3) ": ";
+        font-weight: 600;
+      }
+
+      td:nth-child(4)::before {
+        content: var(--label-4) ": ";
+        font-weight: 600;
+      }
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9em;
+    }
+
+    p code,
+    li code,
+    td code,
+    th code {
+      padding: 0.12rem 0.35rem;
+      border-radius: 0.3rem;
+      background-color: var(--surface-alt);
+    }
+
+    .notes-list {
+      padding-inline-start: 1.25rem;
+    }
+
+    .notes-list li + li {
+      margin-block-start: 0.65rem;
+    }
+
+    .site-footer {
+      border-block-start: 1px solid var(--border);
+      background-color: var(--surface);
+      padding-block: 1.75rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .site-footer a {
+      color: var(--brand);
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link visually-hidden">Skip to main content</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#main-content">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
+        </svg>
+        <span>EcoFlow Keep-Alive</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul class="nav-list">
+          <li><a href="#quick-start">Quick Start</a></li>
+          <li><a href="#configuration">Configuration</a></li>
+          <li><a href="#troubleshooting">Troubleshooting</a></li>
+          <li><a href="https://github.com/nielshh/ecoflow-keepalive">GitHub</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <span class="eyebrow">Multi-arch Docker &bull; amd64 &amp; arm64</span>
+      <h1 id="main-content" tabindex="-1">Keep EcoFlow Cloud MQTT Telemetry Flowing</h1>
+      <p class="lead">
+        A lightweight headless Chromium container that keeps an authenticated EcoFlow User Portal session open so your Home Assistant EcoFlow integration continuously receives live battery and power stats.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/nielshh/ecoflow-keepalive/pkgs/container/ecoflow-keepalive">View GHCR Package</a>
+        <a class="btn" href="https://github.com/nielshh/ecoflow-keepalive">Source on GitHub</a>
+      </div>
+    </section>
+
+    <section aria-labelledby="features-heading">
+      <h2 id="features-heading">Built for Hands-Off Reliability</h2>
+      <div class="card-grid">
+        <article class="card">
+          <h3>Scheduled Clean Restarts</h3>
+          <p>Automatically exits after a configurable interval (default 4 hours) so Docker brings up a fresh Chromium session before stale tokens build up.</p>
+        </article>
+        <article class="card">
+          <h3>Crash &amp; Memory Protection</h3>
+          <p>Configured with <code>shm_size: 512mb</code>, Docker-safe Chromium flags, and a page crash listener that triggers an automatic restart instead of hanging.</p>
+        </article>
+        <article class="card">
+          <h3>Low CPU Footprint</h3>
+          <p>Disables CSS animations and transitions on load to keep idle resource usage minimal on Raspberry Pi, Mac mini, or NAS hosts.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="quick-start" aria-labelledby="quick-start-heading">
+      <h2 id="quick-start-heading">Quick Start</h2>
+      <p>Pull the prebuilt multi-arch image from GitHub Container Registry with Docker Compose or <code>docker run</code>.</p>
+
+      <figure class="code-figure">
+        <figcaption id="compose-caption">docker-compose.yml</figcaption>
+        <div class="copyable">
+          <span class="copy">
+            <button type="button" class="copy-button" command="--copy" commandfor="compose-snippet" aria-label="Copy docker-compose.yml configuration">
+              <svg class="icon icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <svg class="icon icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </button>
+            <span class="tip" role="status"></span>
+          </span>
+          <pre role="region" aria-labelledby="compose-caption" tabindex="0"><code id="compose-snippet">services:
+  ecoflow-keepalive:
+    image: ghcr.io/nielshh/ecoflow-keepalive:latest
+    container_name: ecoflow-keepalive
+    init: true
+    shm_size: "512mb"
+    restart: unless-stopped
+    environment:
+      - ECOFLOW_EMAIL=your-email@example.com
+      - ECOFLOW_PASSWORD=your-password
+      # Optional:
+      # - ECOFLOW_REGION=eu
+      # - ECOFLOW_COUNTRY=Netherlands
+      # - RESTART_INTERVAL_HOURS=4</code></pre>
+        </div>
+      </figure>
+
+      <figure class="code-figure">
+        <figcaption id="run-caption">Docker CLI command</figcaption>
+        <div class="copyable">
+          <span class="copy">
+            <button type="button" class="copy-button" command="--copy" commandfor="run-snippet" aria-label="Copy docker run command">
+              <svg class="icon icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <svg class="icon icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </button>
+            <span class="tip" role="status"></span>
+          </span>
+          <pre role="region" aria-labelledby="run-caption" tabindex="0"><code id="run-snippet">docker run -d \
+  --name ecoflow-keepalive \
+  --init \
+  --shm-size=512mb \
+  --restart unless-stopped \
+  -e ECOFLOW_EMAIL="your-email@example.com" \
+  -e ECOFLOW_PASSWORD="your-password" \
+  ghcr.io/nielshh/ecoflow-keepalive:latest</code></pre>
+        </div>
+      </figure>
+    </section>
+
+    <section id="configuration" aria-labelledby="configuration-heading">
+      <h2 id="configuration-heading">Configuration</h2>
+      <div tabindex="0" role="region" aria-labelledby="env-table-caption" class="table-wrapper">
+        <table>
+          <caption id="env-table-caption">Supported environment variables</caption>
+          <thead>
+            <tr>
+              <th scope="col">Variable</th>
+              <th scope="col">Required</th>
+              <th scope="col">Default</th>
+              <th scope="col">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><code>ECOFLOW_EMAIL</code></th>
+              <td>Yes</td>
+              <td>—</td>
+              <td>Email address for your EcoFlow account.</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>ECOFLOW_PASSWORD</code></th>
+              <td>Yes</td>
+              <td>—</td>
+              <td>Password for your EcoFlow account.</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>ECOFLOW_REGION</code></th>
+              <td>No</td>
+              <td><code>eu</code></td>
+              <td>Portal region path segment (e.g. <code>eu</code> or <code>us</code>).</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>ECOFLOW_COUNTRY</code></th>
+              <td>No</td>
+              <td><em>empty</em></td>
+              <td>Optional country name to pick from the portal country selector (e.g. <code>Netherlands</code>).</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>RESTART_INTERVAL_HOURS</code></th>
+              <td>No</td>
+              <td><code>4</code></td>
+              <td>Hours to keep the dashboard open before exiting for a fresh Docker restart.</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>DEBUG_SCREENSHOTS</code></th>
+              <td>No</td>
+              <td><code>false</code></td>
+              <td>Set to <code>true</code> to write diagnostic screenshots into <code>SCREENSHOT_DIR</code>.</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>SCREENSHOT_DIR</code></th>
+              <td>No</td>
+              <td><code>/app/output</code></td>
+              <td>Directory inside the container used when <code>DEBUG_SCREENSHOTS=true</code>.</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>ECOFLOW_USER_AGENT</code></th>
+              <td>No</td>
+              <td><em>Chromium default</em></td>
+              <td>Optional custom User-Agent override.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="troubleshooting" aria-labelledby="troubleshooting-heading">
+      <h2 id="troubleshooting-heading">Troubleshooting</h2>
+      <ul class="notes-list">
+        <li><strong><code>Page crashed</code> error:</strong> Ensure <code>shm_size: "512mb"</code> (or <code>--shm-size=512mb</code>) is set. Docker's default 64 MB <code>/dev/shm</code> causes Chromium tabs to crash.</li>
+        <li><strong>Login stays on <code>/login</code>:</strong> Verify <code>ECOFLOW_EMAIL</code>, <code>ECOFLOW_PASSWORD</code>, and <code>ECOFLOW_REGION</code> (or set <code>ECOFLOW_COUNTRY</code> if your portal defaults to another country).</li>
+        <li><strong>Inspecting login issues:</strong> Temporarily enable <code>DEBUG_SCREENSHOTS=true</code> with a <code>./output:/app/output</code> volume mount, inspect the saved PNGs, and remove them afterward.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>
+        Unofficial community tool &mdash; not affiliated with EcoFlow. Licensed under the
+        <a href="https://github.com/nielshh/ecoflow-keepalive/blob/main/LICENSE">MIT License</a>.
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    const timers = new WeakMap();
+    let lastMessage = "";
+
+    function report(button, ok) {
+      const tip = button.nextElementSibling;
+      clearTimeout(timers.get(button));
+      button.removeAttribute("data-copied");
+      button.removeAttribute("data-failed");
+
+      let message = ok ? "Copied" : "Copy failed";
+      if (message === lastMessage) {
+        message += "\u00A0";
+      }
+      lastMessage = message;
+
+      tip.textContent = "";
+      void button.offsetWidth;
+      button.setAttribute(ok ? "data-copied" : "data-failed", "");
+      requestAnimationFrame(() => {
+        tip.textContent = message;
+      });
+
+      timers.set(
+        button,
+        setTimeout(() => {
+          button.removeAttribute("data-copied");
+          button.removeAttribute("data-failed");
+          tip.textContent = "";
+        }, 2000)
+      );
+    }
+
+    async function copy(button, target) {
+      const text = target.matches("input, textarea")
+        ? target.value
+        : target.innerText.trim();
+      if (!text) return;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        report(button, true);
+      } catch {
+        report(button, false);
+      }
+    }
+
+    if ("CommandEvent" in window) {
+      document.addEventListener(
+        "command",
+        (event) => {
+          if (event.command.startsWith("--copy") && event.source && event.target) {
+            copy(event.source, event.target);
+          }
+        },
+        true
+      );
+    } else {
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest('button[command^="--copy"]');
+        if (!button) return;
+        const target = document.getElementById(button.getAttribute("commandfor"));
+        if (target) copy(button, target);
+      });
+    }
+  </script>
+</body>
+</html>

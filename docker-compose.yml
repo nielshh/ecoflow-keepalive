@@ -1,0 +1,21 @@
+services:
+  ecoflow-keepalive:
+    image: ghcr.io/nielshh/ecoflow-keepalive:latest
+    # Uncomment below (and comment out 'image' above) to build locally instead:
+    # build: .
+    container_name: ecoflow-keepalive
+    init: true
+    shm_size: "512mb"
+    restart: unless-stopped
+    environment:
+      - ECOFLOW_EMAIL=your-email@example.com
+      - ECOFLOW_PASSWORD=your-password
+      # Optional settings:
+      # - ECOFLOW_REGION=eu
+      # - ECOFLOW_COUNTRY=Netherlands
+      # - RESTART_INTERVAL_HOURS=4
+      # - DEBUG_SCREENSHOTS=false
+      # - ECOFLOW_USER_AGENT=
+    # Optional volume if DEBUG_SCREENSHOTS=true:
+    # volumes:
+    #   - ./output:/app/output
