@@ -42,6 +42,8 @@ jobs:
       - name: Extract metadata (tags and labels)
         id: meta
         uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
@@ -49,6 +51,10 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
+          labels: |
+            org.opencontainers.image.title=EcoFlow Keep-Alive
+            org.opencontainers.image.description=Lightweight headless Chromium Docker container that keeps EcoFlow cloud MQTT telemetry flowing for Home Assistant.
+            org.opencontainers.image.url=https://nielshh.github.io/ecoflow-keepalive/
 
       - name: Build and push multi-arch Docker image
         uses: docker/build-push-action@v6
@@ -56,7 +62,9 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
+          provenance: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
